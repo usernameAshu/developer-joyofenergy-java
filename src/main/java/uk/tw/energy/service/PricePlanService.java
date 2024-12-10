@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import uk.tw.energy.Utility.EnergyCalculationUtil;
 import uk.tw.energy.domain.ElectricityReading;
 import uk.tw.energy.domain.PricePlan;
 
@@ -35,15 +36,22 @@ public class PricePlanService {
                 .collect(Collectors.toMap(PricePlan::getPlanName, t -> calculateCost(electricityReadings.get(), t))));
     }
 
+    public PricePlan getPricePlanFromId(String pricePlanId) {
+       return pricePlans.stream()
+                .filter(pricePlan -> pricePlan.getPlanName().equalsIgnoreCase(pricePlanId))
+                .findFirst().get();
+
+    }
+
     private BigDecimal calculateCost(List<ElectricityReading> electricityReadings, PricePlan pricePlan) {
-        BigDecimal average = calculateAverageReading(electricityReadings);
-        BigDecimal timeElapsed = calculateTimeElapsed(electricityReadings);
+        BigDecimal average = EnergyCalculationUtil.calculateAverageReading(electricityReadings);
+        BigDecimal timeElapsed = EnergyCalculationUtil.calculateTimeElapsed(electricityReadings);
 
         BigDecimal averagedCost = average.divide(timeElapsed, RoundingMode.HALF_UP);
         return averagedCost.multiply(pricePlan.getUnitRate());
     }
 
-    private BigDecimal calculateAverageReading(List<ElectricityReading> electricityReadings) {
+    /*private BigDecimal calculateAverageReading(List<ElectricityReading> electricityReadings) {
         BigDecimal summedReadings = electricityReadings.stream()
                 .map(ElectricityReading::reading)
                 .reduce(BigDecimal.ZERO, (reading, accumulator) -> reading.add(accumulator));
@@ -61,5 +69,5 @@ public class PricePlanService {
                 .get();
 
         return BigDecimal.valueOf(Duration.between(first.time(), last.time()).getSeconds() / 3600.0);
-    }
+    }*/
 }
